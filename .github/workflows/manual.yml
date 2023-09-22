@@ -39,6 +39,7 @@ jobs:
         
       - name: git clone sfa
         run: |
+          mkdir ${{ github.workspace }}/build
           cd ${{ github.workspace }}/build
           git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
           cd ${{ github.workspace }}/build/legado
