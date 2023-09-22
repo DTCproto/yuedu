@@ -49,10 +49,9 @@ jobs:
 
       - name: Unify Version Name
         run: |
-          sed "/def version/c def version = \"3.${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
+          sed "/def version/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
           sed "s/'.release'/'.releaseDev'/" ${{ github.workspace }}/build/legado/app/build.gradle  -i
           sed 's/.release/.releaseDev/'     ${{ github.workspace }}/build/legado/app/google-services.json -i
-          cat  ${{ github.workspace }}/build/legado/app/build.gradle
 
       - name: Clear 18PlusList
         run: |
@@ -68,7 +67,7 @@ jobs:
 
       - name: Build APK With Gradle
         run: |
-          cp ${{ github.workspace }}/build/legado
+          cd ${{ github.workspace }}/build/legado
           chmod +x gradlew
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
 
