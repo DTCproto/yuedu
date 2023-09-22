@@ -1,0 +1,79 @@
+name: BUILD_APK_BY_MANUAL
+
+on:
+  workflow_dispatch:
+    inputs:
+      legado_branch:
+        description: '指定legado分支'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - 'master'
+      legado_commit_id:
+        description: '指定legado使用commit id版本'
+        required: true
+        default: 'HEAD~0'
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '20'
+      - name: java version
+        run: |
+          java --version
+
+   #  - name: Setup Android SDK
+   #    uses: android-actions/setup-android@v2
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: git clone sfa
+        run: |
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
+          cd ${{ github.workspace }}/build/legado
+          git reset --hard ${{ inputs.x_sb_commit_id }}
+          echo "main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
+          echo "legado_version=${main_version}.$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Unify Version Name
+        run: |
+          sed "/def version/c def version = \"${legado_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
+          sed "s/'.release'/'.releaseDev'/" ${{ github.workspace }}/build/legado/app/build.gradle  -i
+          sed 's/.release/.releaseDev/'     ${{ github.workspace }}/build/legado/app/google-services.json -i
+
+      - name: Clear 18PlusList
+        run: |
+          echo "" > ${{ github.workspace }}/build/legado/app/src/main/assets/18PlusList.txt
+  
+      - name: Config Apk Sign
+        run: |
+          cp ${{ github.workspace }}/build/legado/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
+          sed '$a\RELEASE_STORE_FILE=./legado.jks'          ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_ALIAS=legado'                 ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_STORE_PASSWORD=gedoor_legado'     ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_PASSWORD=gedoor_legado'       ${{ github.workspace }}/build/legado/gradle.properties -i
+          cat ${{ github.workspace }}/build/legado/gradle.properties
+
+      - name: Build APK With Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
+
+      - name: Upload dev apk
+        uses: actions/upload-artifact@v3
+        with:
+          name: dev_apks
+          path: |
+            ${{ github.workspace }}/build/legado/app/build/outputs/apk/*/*/*.apk
+      
