@@ -40,7 +40,7 @@ jobs:
           cd ${{ github.workspace }}/build
           git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
           cd ${{ github.workspace }}/build/legado
-          git reset --hard ${{ inputs.x_sb_commit_id }}
+          git reset --hard ${{ inputs.legado_commit_id }}
           echo "legado_main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
           echo "legado_sub_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
