@@ -4,6 +4,5 @@ build/
 *.apk
 *.iml
 .idea/
-*.jks
 *.keystore
 *.hprof
