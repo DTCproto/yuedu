@@ -53,10 +53,10 @@ jobs:
       - name: (After)Free Disk-Space
         run: df -h
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -65,7 +65,7 @@ jobs:
           java --version
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: git clone legado
         run: |
@@ -104,7 +104,7 @@ jobs:
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
 
       - name: Upload dev apk
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: legado_dev_apks
           compression-level: 9
@@ -125,7 +125,7 @@ jobs:
           echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         if: ${{ inputs.release_archives }}
         with:
           pattern: "legado_dev_apks*"
