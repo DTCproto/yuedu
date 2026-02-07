@@ -1,0 +1,162 @@
+name: BUILD_APK_BY_MANUAL(BETA)
+
+on:
+  workflow_dispatch:
+    inputs:
+      legado_branch:
+        description: '指定legado分支'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - 'master'
+      legado_commit_id:
+        description: '指定legado使用commit id版本'
+        required: true
+        default: 'HEAD~0'
+        type: string
+      release_archives:
+        description: "enable release archives"
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      #- name: Free Disk-Space
+      #  run: df -h && sudo apt-get clean && docker system prune -a -f && sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h
+
+      - name: (Before)Free Disk-Space
+        run: df -h
+
+      - name: Free Disk Space
+        uses: endersonmenezes/free-disk-space@v3  # Use @main for latest, @v3 for stable
+        with:
+          #remove_android: true
+          remove_dotnet: true
+          remove_haskell: true
+          remove_tool_cache: true
+          remove_swap: true
+          #remove_packages: "azure-cli google-cloud-cli microsoft-edge-stable google-chrome-stable firefox postgresql* temurin-* *llvm* mysql* dotnet-sdk-*"
+          remove_packages_one_command: true
+          #remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share/az* /usr/local/lib/node_modules /usr/local/share/chromium /usr/local/share/powershell /usr/local/julia /usr/local/aws-cli /usr/local/aws-sam-cli /usr/share/gradle"
+          rm_cmd: "rmz"  # Use 'rmz' for faster deletion (default: 'rm')
+          #rmz_version: "3.1.1"  # Required when rm_cmd is 'rmz'
+          testing: false
+
+      - name: (After)Free Disk-Space
+        run: df -h
+
+      - uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: java version
+        run: |
+          java --version
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: git clone legado
+        run: |
+          mkdir ${{ github.workspace }}/build
+          cd ${{ github.workspace }}/build
+          git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
+          cd ${{ github.workspace }}/build/legado
+          git checkout --force --quiet ${{ inputs.legado_commit_id }}
+          echo "legado_main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
+          echo "legado_sub_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Unify Version Name
+        run: |
+          sed "/def version/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
+          sed "s/'.release'/'.releaseDev'/" ${{ github.workspace }}/build/legado/app/build.gradle  -i
+          sed 's/.release/.releaseDev/'     ${{ github.workspace }}/build/legado/app/google-services.json -i
+
+      - name: Clear 18PlusList
+        run: |
+          echo "" > ${{ github.workspace }}/build/legado/app/src/main/assets/18PlusList.txt
+
+      - name: Config Apk Sign
+        run: |
+          sed '$a\RELEASE_STORE_FILE=./legado.jks'          ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_ALIAS=legado'                 ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_STORE_PASSWORD=gedoor_legado'     ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_PASSWORD=gedoor_legado'       ${{ github.workspace }}/build/legado/gradle.properties -i
+          cp ${{ github.workspace }}/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
+
+        # cp ${{ github.workspace }}/build/legado/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
+
+      - name: Build APK With Gradle
+        run: |
+          cd ${{ github.workspace }}/build/legado
+          chmod +x gradlew
+          ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
+
+      - name: Upload dev apk
+        uses: actions/upload-artifact@v6
+        with:
+          name: legado_dev_apks
+          compression-level: 9
+          path: |
+            ${{ github.workspace }}/build/legado/app/build/outputs/apk/*/*/*.apk
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Get current date time
+        run: |
+          echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+
+      - name: Download TEMP archives
+        uses: actions/download-artifact@v7
+        if: ${{ inputs.release_archives }}
+        with:
+          pattern: "legado_dev_apks*"
+          merge-multiple: true
+          path: ${{ github.workspace }}/temp
+
+      - name: show down files
+        if: ${{ inputs.release_archives }}
+        run: |
+          ls -R ${{ github.workspace }}/temp
+
+      - name: 7-Zip files binaries
+        if: ${{ inputs.release_archives }}
+        run: |
+          find ${{ github.workspace }}/temp/ -type f -name "*.apk" | xargs 7z a -mx9 ${{ github.workspace }}/archives/apks_all-V-${{ env.current_date_time }}.7z
+        
+        # find ${{ github.workspace }}/temp/ -type f -name "*arm64-v8a.apk" | xargs 7z a -mx9 ${{ github.workspace }}/archives/apks_arm_v8a-V-${{ env.current_date_time }}.7z
+
+      - name: show zip files
+        if: ${{ inputs.release_archives }}
+        run: |
+          ls -R ${{ github.workspace }}/archives
+
+      - name: Release archives
+        uses: softprops/action-gh-release@v2
+        if: ${{ inputs.release_archives }}
+        with:
+          tag_name: "V-${{ env.current_date_time }}"
+          name: "V-${{ env.current_date_time }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          body: "legado build result."
+          files: |
+            ${{ github.workspace }}/archives/**
