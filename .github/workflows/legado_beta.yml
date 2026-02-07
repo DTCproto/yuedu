@@ -71,7 +71,7 @@ jobs:
         run: |
           mkdir ${{ github.workspace }}/build
           cd ${{ github.workspace }}/build
-          git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
+          git clone -b ${{ inputs.legado_branch }} https://github.com/LegadoTeam/legado.git
           cd ${{ github.workspace }}/build/legado
           git checkout --force --quiet ${{ inputs.legado_commit_id }}
           echo "legado_main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
