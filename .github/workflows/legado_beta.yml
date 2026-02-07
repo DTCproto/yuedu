@@ -157,6 +157,6 @@ jobs:
           name: "V-${{ env.current_date_time }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          body: "legado build result."
+          body: "legado build result(from LegadoTeam)."
           files: |
             ${{ github.workspace }}/archives/**
