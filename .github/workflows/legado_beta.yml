@@ -104,7 +104,7 @@ jobs:
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
 
       - name: Upload dev apk
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: legado_dev_apks
           compression-level: 9
@@ -125,7 +125,7 @@ jobs:
           echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         if: ${{ inputs.release_archives }}
         with:
           pattern: "legado_dev_apks*"
