@@ -1,4 +1,4 @@
-name: BUILD_APK_BY_MANUAL
+name: BUILD_APK_BY_MANUAL(V1)
 
 on:
   workflow_dispatch:
@@ -65,7 +65,7 @@ jobs:
           java --version
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: git clone legado
         run: |
@@ -104,7 +104,7 @@ jobs:
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
 
       - name: Upload dev apk
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: legado_dev_apks
           compression-level: 9
@@ -125,7 +125,7 @@ jobs:
           echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         if: ${{ inputs.release_archives }}
         with:
           pattern: "legado_dev_apks*"
@@ -150,13 +150,13 @@ jobs:
           ls -R ${{ github.workspace }}/archives
 
       - name: Release archives
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: ${{ inputs.release_archives }}
         with:
           tag_name: "V-${{ env.current_date_time }}"
           name: "V-${{ env.current_date_time }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          body: "legado build result."
+          body: "legado build result(from gedoor)."
           files: |
             ${{ github.workspace }}/archives/**
