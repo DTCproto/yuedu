@@ -74,7 +74,7 @@ jobs:
           git clone -b ${{ inputs.legado_branch }} https://github.com/LegadoTeam/legado.git
           cd ${{ github.workspace }}/build/legado
           git checkout --force --quiet ${{ inputs.legado_commit_id }}
-          echo "legado_main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
+          echo "legado_main_version=$(date -d '8 hour' -u +'3.%y.%m%d%H')" >> "$GITHUB_ENV"
           echo "legado_sub_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Unify Version Name
@@ -120,7 +120,7 @@ jobs:
     steps:
       - name: Get current date time
         run: |
-          echo "current_date_time=$(date -d "8 hour" -u +'%Y%m%d-%H%M%S.beta')" >> "$GITHUB_ENV"
+          echo "current_date_time=$(date -d '8 hour' -u +'%Y%m%d-%H%M%S.beta')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
         uses: actions/download-artifact@v8

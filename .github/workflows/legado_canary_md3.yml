@@ -77,7 +77,7 @@ jobs:
           MAJOR=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_MAJOR' | cut -d'=' -f2 | tr -d '[:space:]')
           MINOR=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_MINOR' | cut -d'=' -f2 | tr -d '[:space:]')
           PATCH=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_PATCH' | cut -d'=' -f2 | tr -d '[:space:]')
-          echo "legado_main_version=$MAJOR.$MINOR.$PATCH.$(date -d "8 hour" -u +%y%m%d%H).$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "legado_main_version=$MAJOR.$MINOR.$PATCH.$(date -d '8 hour' -u +'%y%m%d%H').$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
           echo "legado_version_code=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
 
       - name: Unify app name
@@ -125,7 +125,7 @@ jobs:
     steps:
       - name: Get current date time
         run: |
-          echo "current_date_time=$(date -d "8 hour" -u +'%Y%m%d-%H%M%S.canary')" >> "$GITHUB_ENV"
+          echo "current_date_time=$(date -d '8 hour' -u +'%Y%m%d-%H%M%S.canary')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
         uses: actions/download-artifact@v8
