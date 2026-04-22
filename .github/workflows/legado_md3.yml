@@ -95,7 +95,7 @@ jobs:
           sed '$a\RELEASE_KEY_ALIAS=dt'            ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
           sed '$a\RELEASE_STORE_PASSWORD=dt@pwd'   ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
           sed '$a\RELEASE_KEY_PASSWORD=dt@pwd'     ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
-          cp ${{ github.workspace }}/.github/workflows/legado.jks ${{ github.workspace }}/build/legado-with-MD3/app/legado.jks
+          cp ${{ github.workspace }}/.github/workflows/dt.p12.jks ${{ github.workspace }}/build/legado-with-MD3/app/dt.p12.jks
 
       - name: Build APK With Gradle
         run: |
