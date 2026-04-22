@@ -80,8 +80,8 @@ jobs:
       - name: Unify Version Name
         run: |
           sed "/def version/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
-          sed "s/'.release'/'.releaseDev'/" ${{ github.workspace }}/build/legado/app/build.gradle  -i
-          sed 's/.release/.releaseDev/'     ${{ github.workspace }}/build/legado/app/google-services.json -i
+          sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/build.gradle  -i
+          sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/google-services.json -i
 
       - name: Clear 18PlusList
         run: |
@@ -94,8 +94,6 @@ jobs:
           sed '$a\RELEASE_STORE_PASSWORD=gedoor_legado'     ${{ github.workspace }}/build/legado/gradle.properties -i
           sed '$a\RELEASE_KEY_PASSWORD=gedoor_legado'       ${{ github.workspace }}/build/legado/gradle.properties -i
           cp ${{ github.workspace }}/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
-
-        # cp ${{ github.workspace }}/build/legado/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
 
       - name: Build APK With Gradle
         run: |
