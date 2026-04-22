@@ -1,4 +1,4 @@
-name: BUILD_APK_BY_MANUAL(MD3)
+name: BUILD_APK_BY_MANUAL(V1)
 
 on:
   workflow_dispatch:
@@ -6,10 +6,10 @@ on:
       legado_branch:
         description: '指定legado分支'
         required: true
-        default: 'main'
+        default: 'master'
         type: choice
         options:
-          - 'main'
+          - 'master'
       legado_commit_id:
         description: '指定legado使用commit id版本'
         required: true
@@ -71,40 +71,35 @@ jobs:
         run: |
           mkdir ${{ github.workspace }}/build
           cd ${{ github.workspace }}/build
-          git clone -b ${{ inputs.legado_branch }} https://github.com/HapeLee/legado-with-MD3.git
-          cd ${{ github.workspace }}/build/legado-with-MD3
+          git clone -b ${{ inputs.legado_branch }} https://github.com/gedoor/legado.git
+          cd ${{ github.workspace }}/build/legado
           git checkout --force --quiet ${{ inputs.legado_commit_id }}
-          MAJOR=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_MAJOR' | cut -d'=' -f2 | tr -d '[:space:]')
-          MINOR=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_MINOR' | cut -d'=' -f2 | tr -d '[:space:]')
-          PATCH=$(cat ${{ github.workspace }}/build/legado-with-MD3/app/version.properties | grep 'VERSION_PATCH' | cut -d'=' -f2 | tr -d '[:space:]')
-          echo "legado_main_version=$MAJOR.$MINOR.$PATCH.$(date -d "8 hour" -u +%y%m%d%H).$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
-          echo "legado_version_code=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+          echo "legado_main_version=$(date -d "8 hour" -u +3.%y.%m%d%H)" >> "$GITHUB_ENV"
+          echo "legado_sub_version=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
-      - name: Unify app name
+      - name: Unify Version Name
         run: |
-          sed "s/\.kazusa/\.kazusa.releaseCanary/g" ${{ github.workspace }}/build/legado-with-MD3/app/build.gradle.kts  -i
-          sed "s/\.kazusa/\.kazusa.releaseCanary/g" ${{ github.workspace }}/build/legado-with-MD3/app/google-services.json -i
+          sed "/def version/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
+          sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/build.gradle  -i
+          sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/google-services.json -i
 
       - name: Clear 18PlusList
         run: |
-          echo "" > ${{ github.workspace }}/build/legado-with-MD3/app/src/main/assets/18PlusList.txt
+          echo "" > ${{ github.workspace }}/build/legado/app/src/main/assets/18PlusList.txt
 
       - name: Config Apk Sign
         run: |
-          sed '$a\RELEASE_STORE_FILE=./dt.p12.jks' ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
-          sed '$a\RELEASE_KEY_ALIAS=dt'            ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
-          sed '$a\RELEASE_STORE_PASSWORD=dt@pwd'   ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
-          sed '$a\RELEASE_KEY_PASSWORD=dt@pwd'     ${{ github.workspace }}/build/legado-with-MD3/gradle.properties -i
-          cp ${{ github.workspace }}/.github/workflows/dt.p12.jks ${{ github.workspace }}/build/legado-with-MD3/app/dt.p12.jks
+          sed '$a\RELEASE_STORE_FILE=./legado.jks'          ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_ALIAS=legado'                 ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_STORE_PASSWORD=gedoor_legado'     ${{ github.workspace }}/build/legado/gradle.properties -i
+          sed '$a\RELEASE_KEY_PASSWORD=gedoor_legado'       ${{ github.workspace }}/build/legado/gradle.properties -i
+          cp ${{ github.workspace }}/.github/workflows/legado.jks ${{ github.workspace }}/build/legado/app/legado.jks
 
       - name: Build APK With Gradle
         run: |
-          cd ${{ github.workspace }}/build/legado-with-MD3
+          cd ${{ github.workspace }}/build/legado
           chmod +x gradlew
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
-        env:
-          COMMIT_NUMBER: ${{ env.legado_version_code }}
-          APP_VERSION_NAME: ${{ env.legado_main_version }}
 
       - name: Upload dev apk
         uses: actions/upload-artifact@v7
@@ -112,7 +107,7 @@ jobs:
           name: legado_dev_apks
           compression-level: 9
           path: |
-            ${{ github.workspace }}/build/legado-with-MD3/app/build/outputs/apk/*/*/*.apk
+            ${{ github.workspace }}/build/legado/app/build/outputs/apk/*/*/*.apk
 
   release:
     needs: [build]
@@ -125,7 +120,7 @@ jobs:
     steps:
       - name: Get current date time
         run: |
-          echo "current_date_time=$(TZ=Asia/Shanghai date +'%Y-%m-%d-%H-%M')" >> "$GITHUB_ENV"
+          echo "current_date_time=$(date -d "8 hour" -u +'%Y%m%d-%H%M%S.dev')" >> "$GITHUB_ENV"
 
       - name: Download TEMP archives
         uses: actions/download-artifact@v8
@@ -160,6 +155,6 @@ jobs:
           name: "V-${{ env.current_date_time }}"
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          body: "legado build result(from HapeLee)."
+          body: "legado build result(from gedoor)."
           files: |
             ${{ github.workspace }}/archives/**
