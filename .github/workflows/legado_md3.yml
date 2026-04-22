@@ -103,8 +103,8 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleapprelease --build-cache --parallel --daemon --warning-mode all
         env:
-          COMMIT_NUMBER: ${legado_version_code}
-          APP_VERSION_NAME: ${legado_main_version}
+          COMMIT_NUMBER: ${{ env.legado_version_code }}
+          APP_VERSION_NAME: ${{ env.legado_main_version }}
 
       - name: Upload dev apk
         uses: actions/upload-artifact@v7
