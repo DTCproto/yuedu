@@ -79,7 +79,7 @@ jobs:
 
       - name: Unify Version Name
         run: |
-          sed "/def version/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
+          sed "/def version =/c def version = \"${legado_main_version}.${legado_sub_version}\"" ${{ github.workspace }}/build/legado/app/build.gradle -i
           sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/build.gradle  -i
           sed "s/\.release/\.releaseDev/g" ${{ github.workspace }}/build/legado/app/google-services.json -i
 
